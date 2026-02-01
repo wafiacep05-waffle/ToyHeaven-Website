@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Product Details | ToyVerse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        h2 { font-family: 'Playfair Display', serif; }
+        
+        /* Improved Cart Drawer */
+        #cart-drawer {
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateX(100%);
+            height: 100vh; /* Ensure full height */
+        }
+        #cart-drawer.open { transform: translateX(0); }
+        
+        #cart-overlay {
+            display: none;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px);
+        }
+        #cart-overlay.open { display: block; }
+
+        /* Hide scrollbar but allow functionality */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-white">
+
+    <nav class="p-8 flex justify-between items-center fixed top-0 w-full bg-white/80 backdrop-blur-md z-40">
+        <a href="grouping assignment.html" class="flex items-center space-x-2 text-[10px] uppercase tracking-widest hover:opacity-50">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            <span>Back to Collection</span>
+        </a>
+        
+        <button onclick="toggleCart()" class="relative p-2">
+            <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+            <span id="cart-count" class="absolute -top-1 -right-1 bg-black text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
+        </button>
+    </nav>
+
+    <nav class="px-8 h-24 flex justify-between items-center fixed top-0 w-full bg-white/90 backdrop-blur-md z-40 border-b border-gray-50">
+        <a href="grouping assignment.html" class="flex items-center space-x-2 text-[10px] uppercase tracking-[0.4em] hover:opacity-50 transition-opacity">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            <span>Collection</span>
+        </a>
+        
+        <button onclick="toggleCart()" class="group relative p-3 hover:bg-gray-50 rounded-full transition-all">
+            <i data-lucide="shopping-bag" class="w-5 h-5 stroke-[1.5]"></i>
+            <span id="cart-count" class="absolute top-2 right-2 bg-black text-white text-[7px] w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
+        </button>
+    </nav>
+
+    <div id="cart-overlay" onclick="toggleCart()" class="fixed inset-0 z-50"></div>
+    <div id="cart-drawer" class="fixed right-0 top-0 h-full w-full max-w-md bg-white z-[60] shadow-2xl p-8 flex flex-col">
+        <div class="flex justify-between items-center mb-12">
+            <h3 class="text-[10px] uppercase tracking-[0.4em] font-bold">Your Bag</h3>
+            <button onclick="toggleCart()"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        
+        <div id="cart-items-list" class="flex-1 overflow-y-auto space-y-8 pr-4">
+            </div>
+
+        <div class="border-t border-gray-100 pt-8 mt-8">
+            <div class="flex justify-between items-center mb-8">
+                <span class="text-[10px] uppercase tracking-widest text-gray-400">Subtotal</span>
+                <span id="cart-subtotal" class="font-bold">RM 0</span>
+            </div>
+            <button class="w-full bg-black text-white py-5 text-[10px] uppercase tracking-[0.3em]">Checkout</button>
+        </div>
+    </div>
+
+    <main class="max-w-6xl mx-auto px-8 py-32">
+        <div id="product-content" class="grid md:grid-cols-2 gap-20 items-center">
+            </div>
+    </main>
+
+    <script>
+        const products = [
+            { id: 1, name: "Bubble Bear", price: 1250, artist: "Atelier Luna", image: "🧸", color: "bg-[#F9F8F6]", desc: "A masterpiece of modern whimsy." },
+            { id: 2, name: "Voyage Bunny", price: 1500, artist: "Star Studio", image: "🐰", color: "bg-[#F3F3F3]", desc: "Inspired by the golden age of travel." },
+            { id: 3, name: "Chrome Cat", price: 1800, artist: "Neo Tokyo", image: "🐱", color: "bg-[#F9F8F6]", desc: "Sleek, futuristic, and hand-polished." },
+            { id: 4, name: "Velvet Fox", price: 1400, artist: "Lyon Artisans", image: "🦊", color: "bg-[#F3F3F3]", desc: "Deep crimson textiles with gold thread." },
+            { id: 5, name: "Golden Swan", price: 2200, artist: "Imperial Play", image: "🦢", color: "bg-[#F9F8F6]", desc: "The pinnacle of the luxury collection." }
+        ];
+
+        let cart = JSON.parse(localStorage.getItem('toyverse_cart')) || [];
+
+        function toggleCart() {
+            document.getElementById('cart-drawer').classList.toggle('open');
+            document.getElementById('cart-overlay').classList.toggle('open');
+        }
+
+        function updateUI() {
+            const list = document.getElementById('cart-items-list');
+            const bagCount = document.getElementById('cart-count');
+            const subtotalEl = document.getElementById('cart-subtotal');
+            
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+            // Update badge count
+            bagCount.innerText = totalItems;
+            if(totalItems > 0) {
+                bagCount.classList.remove('hidden');
+            } else {
+                bagCount.classList.add('hidden');
+            }
+
+            subtotalEl.innerText = `RM ${subtotal.toLocaleString()}`;
+
+            // Clear and rebuild list
+            list.innerHTML = '';
+            if (cart.length === 0) {
+                list.innerHTML = '<div class="h-full flex flex-col items-center justify-center space-y-4 opacity-30"><i data-lucide="shopping-bag" class="w-12 h-12"></i><p class="text-[10px] uppercase tracking-widest">Your bag is empty</p></div>';
+            } else {
+                cart.forEach((item, index) => {
+                    list.innerHTML += `
+                        <div class="flex items-center space-x-6 animate-fadeIn">
+                            <div class="${item.color} w-24 h-28 flex items-center justify-center text-4xl rounded-sm">${item.image}</div>
+                            <div class="flex-1 space-y-2">
+                                <div class="flex justify-between items-start">
+                                    <h4 class="text-[11px] uppercase font-bold tracking-wider">${item.name}</h4>
+                                    <button onclick="removeItem(${index})" class="text-gray-300 hover:text-black transition-colors">
+                                        <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                                <p class="text-[10px] text-gray-400 italic">By ${item.artist}</p>
+                                <div class="flex justify-between items-end pt-2">
+                                    <p class="text-[9px] font-bold px-2 py-1 bg-gray-50 uppercase tracking-tighter">Qty: ${item.quantity}</p>
+                                    <p class="text-[11px] font-bold tracking-tight text-zinc-800">RM ${(item.price * item.quantity).toLocaleString()}</p>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            }
+            
+            localStorage.setItem('toyverse_cart', JSON.stringify(cart));
+            lucide.createIcons(); // Refresh icons for the trash buttons
+        }
+
+        function addToBag(id) {
+            const productToAdd = products.find(p => p.id === id);
+            const existingItem = cart.find(item => item.id === id);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ ...productToAdd, quantity: 1 });
+            }
+            
+            updateUI();
+            toggleCart(); // Slide open the drawer immediately to show the item was added
+        }
+
+        function removeItem(index) {
+            cart.splice(index, 1);
+            updateUI();
+        }
+
+
+        // Setup Page
+        const params = new URLSearchParams(window.location.search);
+        const productId = parseInt(params.get('id'));
+        const product = products.find(p => p.id === productId);
+
+        if (product) {
+            document.getElementById('product-content').innerHTML = `
+                <div class="${product.color} aspect-square flex items-center justify-center text-[10rem]">
+                    ${product.image}
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase tracking-[0.4em] text-gray-400 mb-4 block">${product.artist}</span>
+                    <h2 class="text-5xl font-light italic mb-6">${product.name}</h2>
+                    <p class="text-gray-600 leading-relaxed mb-10 text-sm font-light">${product.desc}</p>
+                    <div class="flex items-center justify-between border-t border-gray-100 pt-8">
+                        <span class="text-2xl font-medium tracking-tighter">RM ${product.price.toLocaleString()}</span>
+                        <button onclick="addToBag(${product.id})" class="bg-black text-white px-10 py-4 text-[10px] uppercase tracking-[0.3em]">
+                            Add to Bag
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        updateUI(); // Load bag on page load
+        lucide.createIcons();
+    </script>
+</body>
+</html>

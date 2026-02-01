@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Product Details | ToyHeaven</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'toy-blue': '#AAD3DF',
+                        'toy-sage': '#D6D6B3',
+                        'toy-cream': '#EDEDD7',
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h2 { font-family: 'Playfair Display', serif; }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .confirmation-toast { animation: slideDown 0.4s ease forwards; }
+    </style>
+</head>
+<body class="bg-toy-cream">
+    <nav class="fixed w-full top-0 z-50 bg-toy-sage/90 backdrop-blur-md border-b border-gray-100 p-8 flex justify-between items-center">
+        <a href="grouping assignment.html" class="flex items-center space-x-2 text-[10px] uppercase tracking-widest hover:opacity-50">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            <span>Back to Collection</span>
+        </a>
+
+        <div class="flex items-center">
+            <a href="grouping assignment.html" class="relative hover:opacity-60 transition-all flex items-center">
+                <i data-lucide="shopping-bag" class="w-6 h-6 stroke-[1.1]"></i>
+                <span id="cart-count" class="ml-2 bg-black text-white text-[9px] w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
+            </a>
+        </div>
+    </nav>
+
+    <div id="cart-toast" class="fixed top-28 left-1/2 -translate-x-1/2 z-[60] hidden">
+        <div class="bg-black text-white px-6 py-3 text-[9px] uppercase tracking-[0.3em] shadow-2xl confirmation-toast flex items-center space-x-3">
+            <i data-lucide="check" class="w-3 h-3"></i>
+            <span>Added to Selection</span>
+        </div>
+    </div>
+
+    <main class="max-w-6xl mx-auto px-8 py-48">
+        <div id="product-content" class="grid md:grid-cols-2 gap-20 items-center">
+            </div>
+    </main>
+
+    <script>
+        // 1. PRODUCT DATA (Must match grouping assignment.html exactly)
+        const products = [
+            { id: 1, name: "Alien Hijau", price: 1250, artist: "Koleksi Alia", image: "alien hijau.jpg", color: "bg-[#F9F8F6]", desc: "An avant garde interpretation of extraterrestrial life, featuring a minimalist silhouette and a vibrant lime finish." },
+            { id: 2, name: "Gabby Doll", price: 1500, artist: "Koleksi Ainf", image: "gabby doll.jpg", color: "bg-[#F3F3F3]", desc: "A tribute to classic elegance, this piece combines vintage charm with contemporary craftsmanship for the modern collector." },
+            { id: 3, name: "Angkasawan Cimut", price: 1800, artist: "Koleksi Wafi", image: "Angkasawan Cimut.jpg", color: "bg-[#F9F8F6]", desc: "A sleek, interstellar companion hand polished to a mirror finish, embodying the spirit of futuristic exploration." },
+            { id: 4, name: "Dinasour Garang", price: 1400, artist: "Koleksi Fatin", image: "dinasour garang.jpg", color: "bg-[#F3F3F3]", desc: "A bold, prehistoric inspired sculpture featuring textured emerald surfaces and a commanding, architectural presence." },
+            { id: 5, name: "Budak Kelabu", price: 2200, artist: "Koleksi Syah", image: "Budak Kelabu.jpg", color: "bg-[#F9F8F6]", desc: "The pinnacle of the luxury collection, capturing the quiet innocence of childhood through matte grey tones and refined geometry." }
+        ];
+
+        const STORAGE_KEY = 'ToyHeaven_cart';
+
+        // 2. GET PRODUCT FROM URL
+        const params = new URLSearchParams(window.location.search);
+        const productId = parseInt(params.get('id'));
+        const product = products.find(p => p.id === productId);
+
+        // 3. CART LOGIC
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const countEl = document.getElementById('cart-count');
+            if (countEl) {
+                countEl.textContent = totalItems;
+                countEl.classList.toggle('opacity-20', totalItems === 0);
+            }
+        }
+
+        function handleAddToBag() {
+            if (!product) return;
+
+            let cart = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            const existingIndex = cart.findIndex(item => item.id === product.id);
+            
+            if (existingIndex > -1) {
+                cart[existingIndex].quantity += 1;
+            } else {
+                cart.push({ ...product, quantity: 1 });
+            }
+            
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
+            updateCartCount();
+            showToast();
+        }
+
+        function showToast() {
+            const toast = document.getElementById('cart-toast');
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        // 4. INITIALIZE PAGE
+        if (product) {
+            // Determine if image is a file or emoji
+            const imgDisplay = product.image.includes('.') 
+                ? `<img src="${product.image}" class="w-2/3 h-2/3 object-contain">`
+                : product.image;
+
+            document.getElementById('product-content').innerHTML = `
+                <div class="${product.color} aspect-square flex items-center justify-center text-[10rem]">
+                    ${imgDisplay}
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase tracking-[0.4em] text-gray-400 mb-4 block">${product.artist}</span>
+                    <h2 class="text-5xl font-light italic mb-6">${product.name}</h2>
+                    <p class="text-gray-600 leading-relaxed mb-10 text-sm font-light">${product.desc}</p>
+                    <div class="flex items-center justify-between border-t border-gray-100 pt-8">
+                        <span class="text-2xl font-medium tracking-tighter">RM ${product.price.toLocaleString()}</span>
+                        <button onclick="handleAddToBag()" class="bg-black text-white px-10 py-4 text-[10px] uppercase tracking-[0.3em] hover:bg-zinc-800 transition-all">
+                            Add to Bag
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            document.getElementById('product-content').innerHTML = `<p class="col-span-2 text-center py-20">Product not found.</p>`;
+        }
+        
+        // Load count on page load
+        updateCartCount();
+        lucide.createIcons();
+    </script>
+</body>
+</html>
